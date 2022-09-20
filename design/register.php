@@ -2,31 +2,62 @@
 if($_SERVER["REQUEST_METHOD"]=="POST"){
     $name = $_POST['name'];
     $email = $_POST['email'];
+    $phone = $_POST['phone'];
     $pass = $_POST['password'];
     $branch = $_POST['branch'];
     $imgname = $_FILES['img']['name'];
     $imgtmp = $_FILES['img']['tmp_name'];
     $role = $_POST['role'];
-
     if(!empty($imgname)){
         move_uploaded_file($imgtmp,"upload/".$imgname);
     }else{
         $imgname = "upload/undraw_profile.svg";
     }
-    if(!empty($name) && !empty($email) && !empty($pass) && !empty($branch)){
+    if(!empty($name) && !empty($email) && !empty($pass) && !empty($branch) && !empty($phone)){
         $connection = mysqli_connect("localhost","root","","instant" );
         $query_branch= mysqli_query( $connection,"SELECT branch_id FROM branches WHERE branch_name = '$branch'");
         $values = mysqli_fetch_all($query_branch, MYSQLI_ASSOC);
         foreach($values as $value){
             $branch_id = $value['branch_id'];
-        }if($role == "student"){
-                $query_students = mysqli_query($connection,"INSERT INTO students(branch_id,student_name,student_email,student_password,student_img) VALUES ('$branch_id','$name','$email','$pass','$imgname')");
-        }else{
-            mysqli_query($connection,"INSERT INTO instructors(instructor_name,instructor_email,instructor_password,instructor_img) VALUES ('$name','$email','$pass','$imgname')");
         }
-        if(mysqli_affected_rows($connection)==1){
-            header("location:login.php");
+        
+        if($role == "student"){
+            $query_student= mysqli_query( $connection,"SELECT student_email FROM students WHERE student_email = '$email'");
+            if(mysqli_affected_rows($connection) != 1 && strlen($email)!=0){
+                $query_instructor= mysqli_query( $connection,"SELECT instructor_email FROM instructors WHERE instructor_email = '$email'");
+                if(mysqli_affected_rows($connection) != 1 && strlen($email)!=0){
+                    $query_student= mysqli_query( $connection,"SELECT admin_email FROM admins WHERE admin_email = '$email'");
+                    if(mysqli_affected_rows($connection) != 1 && strlen($email)!=0){
+                    $query_students = mysqli_query($connection,"INSERT INTO students(branch_id,student_name,student_email,student_password,student_phone,student_img) VALUES ('$branch_id','$name','$email','$pass','$phone','$imgname')");
+                    header("location:login.php");
+                    }else{
+                        echo "<script>alert('this email is already registered')</script>";
+                    }
+                }else{
+                    echo "<script>alert('this email is already registered')</script>";
+                }
+            }else{
+                echo "<script>alert('this email is already registered')</script>";
+            }
 
+        }else{
+            $query_student= mysqli_query( $connection,"SELECT student_email FROM students WHERE student_email = '$email'");
+            if(mysqli_affected_rows($connection) != 1 && strlen($email)!=0){
+                $query_instructor= mysqli_query( $connection,"SELECT instructor_email FROM instructors WHERE instructor_email = '$email'");
+                if(mysqli_affected_rows($connection) != 1 && strlen($email)!=0){
+                    $query_student= mysqli_query( $connection,"SELECT admin_email FROM admins WHERE admin_email = '$email'");
+                    if(mysqli_affected_rows($connection) != 1 && strlen($email)!=0){
+                        mysqli_query($connection,"INSERT INTO instructors(instructor_name,instructor_email,instructor_password,instructor_phone,instructor_img) VALUES ('$name','$email','$pass','$phone','$imgname')");
+                        header("location:login.php");
+                    }else{
+                        echo "<script>alert('this email is already registered')</script>";
+                    }
+                }else{
+                    echo "<script>alert('this email is already registered')</script>";
+                }
+            }else{
+                echo "<script>alert('this email is already registered')</script>";
+            }
         }
     }else{
         header("location:register.php");
@@ -56,7 +87,7 @@ if($_SERVER["REQUEST_METHOD"]=="POST"){
             <label>Email</label>
         </div>
         <div class="txt_field">
-            <input type="tel" pattern="[0-9]{3}-[0-9]{2}-[0-9]{3}" name="phone" required>
+            <input type="number" pattern="^01[0-2]\d{1,8}$" name="phone" required>
             <span></span>
             <label>phone</label>
         </div>
